@@ -1,4 +1,7 @@
 
+# This app's development data directory
+data/*
+
 # Ignore pycharm
 .idea
 
