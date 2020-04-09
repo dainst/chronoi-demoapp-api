@@ -31,6 +31,32 @@ class BaseModel(Model):
 
 
 class Job(BaseModel):
+    message_delim = "\n"
+
+    statuses = [
+        "NEW",
+        "IN_PROGRESS",
+        "SUCCESS",
+        "FAILED",
+    ]
+
     id = UUIDField(primary_key=True, default=_create_uuid)
-    status = CharField()
+    status = CharField(null=False)
+    request = CharField(null=True)
+    message = CharField(null=True)
     created = DateTimeField(default=datetime.datetime.now)
+
+    def update_status(self, status: str):
+        if status in self.statuses:
+            self.status = status
+            self.save()
+        else:
+            raise ValueError("Not a valid status: '{}'".format(status))
+
+    def add_message(self, message: str):
+        if not self.message:
+            self.message = ""
+        else:
+            self.message += self.message_delim
+        self.message += str(message)
+        self.save()

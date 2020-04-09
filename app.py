@@ -1,57 +1,48 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from flask import Flask, request, json
+from flask import Flask, request, json, send_from_directory
 
-import atexit
 import logging
 import os
-import shutil
-import tempfile
 
+import files
 from models import init_db, Job
+from commands import init_commands
+from schedule import init_app_scheduler
 
-appname = "demoapp"
 
 project_dir = os.path.dirname(__file__)
 
 config_dir = os.path.join(project_dir, "config")
 
-test_dir = "/tmp/does/not/exist/"
+app = Flask(__name__)
+
+db = None
+
+log = app.logger
 
 
-def _init():
-    # Consume config files
-    _init_configs()
-    # init the logger
+def init():
+    # adjust the global log level
     if app.config["ENV"] != "production":
         log.setLevel(logging.DEBUG)
-    # Setup all necessary directories
-    _init_directories()
-    # Setup the database possibly inside one of the directories
-    init_db(_project_path(app.config.get("DB_FILE")))
+    # Consume config files
+    _init_configs()
+    # Setup all necessary directories (needs config)
+    files.init_file_structure(app_config=app.config, proj_dir=project_dir, logger=app.logger)
+    # Setup the database (needs file structure, config)
+    init_db(files.db_path())
+    # Setup the commands module (needs config)
+    init_commands(app_config=app.config, app_logger=app.logger)
+    # Setup the scheduler and directly start it (needs db, commands)
+    scheduler = init_app_scheduler(app_config=app.config, app_logger=app.logger)
+    scheduler.start()
 
 
 def _consume_config_file(filename: str):
     config_path = os.path.join(config_dir, filename)
     app.config.from_pyfile(config_path)
-
-
-# Convenience method to generate a project path depending on
-# the environment and whether the path is already absolute.
-# Always returns an absolute path.
-def _project_path(path: str) -> str:
-    if not os.path.isabs(path):
-        # if the path is not absolute it is either bound to
-        # the test
-        if app.config["ENV"] == "testing":
-            result = os.path.join(test_dir, path)
-        else:
-            result = os.path.join(project_dir, path)
-    else:
-        # if a path is already absolute, return it
-        result = path
-    return result
 
 
 # consume the config files in order of precedence
@@ -64,67 +55,48 @@ def _init_configs():
     else:
         log.warning("Non-standard environment name: {}".format(app.config.get("ENV")))
 
+    # Enable file sending via X-Sendfile if that is wished for
+    if app.config.get("USE_X_SENDFILE", False):
+        app.use_x_sendfile = True
+
     # The user may specify a path to different env file:
     if os.environ.get("FLASK_APP_CONFIG", ""):
         app.config.from_envvar("FLASK_APP_CONFIG")
 
 
-def _init_project_dir(dir_path: str):
-    directory = _project_path(dir_path)
-    os.makedirs(directory, exist_ok=True)
-    log.debug("Creating/Using dir: {}".format(directory))
-
-
-def _init_directories():
-    global test_dir
-
-    if app.config["ENV"] == "testing":
-        name = appname + "-testing"
-        test_dir = tempfile.mkdtemp(prefix=name)
-        # register the deletion of the tempdir on exit
-        atexit.register(_delete_test_directory)
-
-    for key in ["DIR_UPLOADS", "DIR_DOWNLOADS"]:
-        _init_project_dir(app.config[key])
-
-
-def _delete_test_directory():
-    if os.path.isdir(test_dir):
-        shutil.rmtree(test_dir)
-
-
-app = Flask(__name__)
-
-db = None
-
-log = app.logger
-
-_init()
-
-
-def _uploads_path(job: Job) -> str:
-    folder = _project_path(app.config.get("DIR_UPLOADS"))
-    return os.path.join(folder, job.id)
+init()
 
 
 @app.route("/run", methods=["POST"])
-def run():
+def handle_run():
 
     job = Job(status="NEW")
-    job.save(force_insert=True)
-
-    filename = _uploads_path(job)
+    filename = files.upload_path(job)
     log.debug("Writing to: " + filename)
 
     if request.mimetype == "multipart/form-data":
+        # Handle a run command with accompanying file upload
+        # Write the file to disk and save the json formatted
+        # command definition for later processing
         file = request.files['file']
         file.save(filename)
+        job.request = request.form.get("data")
     else:
+        # Handle a run command with text input. Save the text
+        # to a file and save the command definition for later
+        # processing
         data = json.loads(request.get_json())
         with open(filename, mode="w", encoding="UTF-8") as file:
             file.write(data["text"])
+        job.request = request.get_json()
 
+    job.save(force_insert=True)
     return {"job": job.id}
+
+
+@app.route("/result/<path:filename>")
+def handle_result(filename):
+    return send_from_directory(files.downloads_dir(), filename)
 
 
 def get_status():
