@@ -3,8 +3,8 @@
 import shlex
 from subprocess import run, SubprocessError
 
-import files
-from models import Job
+from . import files
+from .models import Job
 
 config = {}
 

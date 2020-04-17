@@ -9,8 +9,8 @@ import unittest
 from io import BytesIO
 
 from app import app
-from files import upload_path
-from models import Job
+from src.files import upload_path
+from src.models import Job
 
 # A regex to check for uuids in different versions, but
 # not allowing the null uuid

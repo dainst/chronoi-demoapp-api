@@ -6,10 +6,10 @@ from flask import Flask, request, json, send_from_directory
 import logging
 import os
 
-import files
-from models import init_db, Job
-from commands import init_commands
-from schedule import init_app_scheduler
+import src.files as files
+from src.models import init_db, Job
+from src.commands import init_commands
+from src.schedule import init_app_scheduler
 
 
 project_dir = os.path.dirname(__file__)

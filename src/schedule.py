@@ -4,8 +4,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from peewee import DoesNotExist
 
 
-from models import Job
-from commands import execute_command
+from .models import Job
+from .commands import execute_command
 
 
 config = {}

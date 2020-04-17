@@ -4,7 +4,7 @@ import os
 import shutil
 import tempfile
 
-from models import Job
+from .models import Job
 
 
 project_dir = "/tmp/does/not/exist/"
