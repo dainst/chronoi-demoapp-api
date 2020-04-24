@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import shlex
-from subprocess import run, SubprocessError
-
+from subprocess import run
 from . import files
 from .models import Job
 
@@ -58,12 +57,12 @@ class FilePath:
 
 
 def execute_command(name: str, options: [str], job: Job):
-    job_input_file = files.upload_path(job)
-    args = _prepare_command_args(name, options, job_input_file)
-
     stdout = open(files.result_path_stdout(job), "wb")
     stderr = open(files.result_path_stderr(job), "wb")
     try:
+        job_input_file = files.upload_path(job)
+        args = _prepare_command_args(name, options, job_input_file)
+
         job.update_status("IN_PROGRESS")
         log.debug("Executing: '{}'".format(" ".join(args)))
         run(args,
@@ -72,7 +71,9 @@ def execute_command(name: str, options: [str], job: Job):
             check=True,
             timeout=_command_timeout(name))
         job.update_status("SUCCESS")
-    except SubprocessError as e:
+    # This catches errors from our program as well as from the called
+    # process, since the latter are wrapped as subprocess.SubprocessError
+    except Exception as e:
         job.update_status("FAILED")
         job.add_message(str(e))
     finally:

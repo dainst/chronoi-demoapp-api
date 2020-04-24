@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import copy
 import json
 import re
 import time
 import unittest
+import warnings
 
 from io import BytesIO
+from werkzeug.wrappers import Response
 
 from app import app
 from src.files import upload_path
@@ -64,6 +67,18 @@ class RouteRunTest(ApiTest):
 
 class RouteResultTest(ApiTest):
 
+    def setUp(self):
+        super().setUp()
+        # Ignore Resource Warnings resulting from flask's send_from_directory().
+        # That function works differently in production anyway.
+        warnings.simplefilter("ignore", ResourceWarning)
+
+    def tearDown(self):
+        super().tearDown()
+        # Reset the filter from setUp
+        warnings.simplefilter("default", ResourceWarning)
+
+
     default_request = {
         "text": "Some\n input\n text\n",
         "command": {
@@ -73,17 +88,17 @@ class RouteResultTest(ApiTest):
     }
 
     @classmethod
-    def _prepare_job(cls, prepare_file=True) -> Job:
+    def _prepare_job(cls, request = None) -> Job:
         # prepare a job for the database that should have been
         # executed after a while
-        request = cls.default_request
+        if request is None:
+            request = cls.default_request
         job = Job(status="NEW", request=json.dumps(request))
 
         # prepare the file that would have been created on job
         # upload
-        if prepare_file:
-            with open(upload_path(job), mode="w") as file:
-                file.write(request["text"])
+        with open(upload_path(job), mode="w") as file:
+            file.write(request["text"])
 
         return job
 
@@ -95,6 +110,12 @@ class RouteResultTest(ApiTest):
         else:
             return template.format(job_id, "stdout")
 
+
+    def _assert_empty_ok(self, response: Response):
+        assert response.status_code == 200, "Should return 200 OK."
+        assert response.get_data(as_text=True) == "", "Should have returned empty."
+
+
     def test_scheduled_job_result(self):
         job = self._prepare_job()
         job.save(force_insert=True)
@@ -102,25 +123,50 @@ class RouteResultTest(ApiTest):
         time.sleep(JOB_COMPLETION_TIME)
 
         # test the stdout path
-        result = self.app.get(self._route(job.id))
-        assert result.status_code == 200,\
-            "Should give 200 OK on result request."
-        assert str(result.data, encoding="utf-8") == self.default_request["text"],\
+        response = self.app.get(self._route(job.id))
+        assert response.status_code == 200, "Should give 200 OK on response request."
+        assert response.get_data(as_text=True) == self.default_request["text"],\
             "Should return input text on successful cat job."
 
         # test the stderr path
-        result = self.app.get(self._route(job.id, stderr=True))
-        assert result.status_code == 200,\
-            "Should give 200 OK on scheduled result stderror request."
+        response = self.app.get(self._route(job.id, stderr=True))
+        self._assert_empty_ok(response)
 
-        assert len(result.data) == 0,\
-            "Should return empty stderr on successful cat job."
 
     def test_schedule_job_with_option_works(self):
-        pass
+        request  = copy.deepcopy(self.default_request)
+        request["command"]["options"] = [ "numbers" ]
+        job = self._prepare_job(request=request)
+        job.save(force_insert=True)
+
+        time.sleep(JOB_COMPLETION_TIME)
+
+        # test the stdout response
+        response = self.app.get(self._route(job.id))
+        assert response.status_code == 200, "Should return 200 OK on scheduled job with option."
+        assert response.get_data(as_text=True) != self.default_request["text"],\
+            "Should not return the standard input text on scheduled result with options."
+        assert len(response.data) >= 0, "Should return non-empty on scheduled job with options."
+
+        # test the stderr response
+        response = self.app.get(self._route(job.id, stderr=True))
+        self._assert_empty_ok(response)
 
     def test_scheduled_job_with_wrong_name_errors(self):
-        pass
+        request = copy.deepcopy(self.default_request)
+        request["command"]["name"] = "invalid-command"
+        job = self._prepare_job(request=request)
+        job.save(force_insert=True)
+
+        time.sleep(JOB_COMPLETION_TIME)
+
+        # stdout and stderr should simply be empty if the job never ran
+        response = self.app.get(self._route(job.id))
+        self._assert_empty_ok(response)
+
+        # stderr should have an error message
+        response = self.app.get(self._route(job.id, stderr=True))
+        self._assert_empty_ok(response)
 
     def test_scheduled_job_witout_command_errors(self):
         pass
