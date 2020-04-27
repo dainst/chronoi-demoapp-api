@@ -1,4 +1,5 @@
 
+from datetime import datetime, timedelta
 from flask import json
 from apscheduler.schedulers.background import BackgroundScheduler
 from peewee import DoesNotExist
@@ -31,8 +32,24 @@ def task_run_new_job():
             job.add_message("Key error: {}".format(e))
 
 
+def task_cleanup_old_job():
+    max_seconds = config.get("TIME_JOB_KEEP_IN_DB")
+    max_datetime = datetime.now() - timedelta(seconds=max_seconds)
+
+    try:
+        job = Job.select() \
+                .where(Job.created < max_datetime) \
+                .order_by(Job.created.asc()) \
+                .get()
+        log.debug("Deleting old job with creation time: {}".format(job.created))
+        job.delete_instance()
+    except DoesNotExist:
+        log.debug("No jobs before deletion time: {}".format(max_datetime))
+
+
 _jobs_to_config_values = [
     (task_run_new_job, "INTERVAL_JOB_START"),
+    (task_cleanup_old_job, "INTERVAL_CLEANUP_START"),
 ]
 
 

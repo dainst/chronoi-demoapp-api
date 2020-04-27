@@ -9,7 +9,9 @@ import time
 import unittest
 import warnings
 
+from datetime import datetime, timedelta
 from io import BytesIO
+from peewee import DoesNotExist
 from werkzeug.wrappers import Response
 
 from app import app
@@ -23,6 +25,10 @@ UUID_REGEX = re.compile('^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f
 # How long to wait for a task to assume to be completed
 # from it's being saved in the db (in seconds)
 JOB_COMPLETION_TIME = 0.5
+
+# How long to wait before housekeeping tasks are assumed
+# to be completed (in seconds)
+HOUSEKEEPING_COMPLETION_TIME = 1.5
 
 
 class JobHelper:
@@ -192,20 +198,42 @@ class RouteResultTest(ApiTest):
         pass
 
 
+def does_throw(my_callable: (), exception_class):
+    result = False
+    try:
+        my_callable()
+    except exception_class:
+        result = True
+    return result
+
+
 class HousekeepingTest(unittest.TestCase):
 
     def setUp(self) -> None:
         app.testing = True
         app.debug = True
 
+        keep_seconds = app.config.get("TIME_JOB_KEEP_IN_DB")
+        self.too_old_to_live = datetime.now() - timedelta(seconds=keep_seconds - 1)
+
     def todo_test_old_file_gets_deleted(self):
         pass
 
-    def todo_test_old_job_gets_deleted(self):
-        pass
+    def test_old_job_gets_deleted(self):
+        job = JobHelper.prepare_job()
+        job.created = self.too_old_to_live
+        job.save(force_insert=True)
+
+        def find_job():
+            Job.get(Job.id == job.id)
+
+        assert not(does_throw(find_job, DoesNotExist)), "Should find the job directly after creation"
+        time.sleep(HOUSEKEEPING_COMPLETION_TIME)
+        assert does_throw(find_job, DoesNotExist), "Should not find the job after housekeeping anymore."
 
     def todo_test_invalid_file_gets_deleted(self):
         pass
+
 
 if __name__ == "__main__":
     unittest.main()
