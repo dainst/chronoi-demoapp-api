@@ -5,9 +5,9 @@ description = ""
 authors = ["David Neugebauer <david.neugebauer@posteo.de>"]
 
 [tool.poetry.dependencies]
-python = "^3.6"
-Flask = "^1.1.2"
-peewee = "^3.13.2"
-APScheduler = "^3.6.3"
+python = "^3.8"
+Flask = "^1.1"
+peewee = "^3.13"
+APScheduler = "^3.6"
 
 [tool.poetry.dev-dependencies]

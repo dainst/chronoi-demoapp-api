@@ -88,7 +88,7 @@ description = "a little orm"
 name = "peewee"
 optional = false
 python-versions = "*"
-version = "3.13.2"
+version = "3.13.3"
 
 [[package]]
 category = "main"
@@ -130,8 +130,8 @@ dev = ["pytest", "pytest-timeout", "coverage", "tox", "sphinx", "pallets-sphinx-
 watchdog = ["watchdog"]
 
 [metadata]
-content-hash = "9cae401e861e0a3a1b24c140017ca408c1c1754e63fbf0ab6233bb768b707edc"
-python-versions = "^3.6"
+content-hash = "089408207ec2df5aa7a4b30ce336ceb97c4c8ef5d3f4d783fa1017d2088a9628"
+python-versions = "^3.8"
 
 [metadata.files]
 apscheduler = [
@@ -190,7 +190,7 @@ markupsafe = [
     {file = "MarkupSafe-1.1.1.tar.gz", hash = "sha256:29872e92839765e546828bb7754a68c418d927cd064fd4708fab9fe9c8bb116b"},
 ]
 peewee = [
-    {file = "peewee-3.13.2.tar.gz", hash = "sha256:85f6696b6691a315646047e0b19e9a28258b35612b7121bc4eb1b61ff53c760a"},
+    {file = "peewee-3.13.3.tar.gz", hash = "sha256:1269a9736865512bd4056298003aab190957afe07d2616cf22eaf56cb6398369"},
 ]
 pytz = [
     {file = "pytz-2019.3-py2.py3-none-any.whl", hash = "sha256:1c557d7d0e871de1f5ccd5833f60fb2550652da6be2693c1e02300743d21500d"},
