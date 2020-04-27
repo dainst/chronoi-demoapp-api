@@ -3,6 +3,7 @@
 
 import copy
 import json
+import os
 import re
 import time
 import unittest
@@ -87,6 +88,7 @@ class RouteRunTest(ApiTest):
         data = response.get_json()
         assert response.status_code == 200, "Should return 200 OK on running with text."
         assert UUID_REGEX.match(data["job"]), "Should return a uuid as job id."
+        assert os.path.isfile(upload_path(Job.get(Job.id == data["job"]))), "Should have created a file."
 
     def test_run_file(self):
         data = {"command": {"name": "ls", "options": ["all", "long"]}}
@@ -94,6 +96,7 @@ class RouteRunTest(ApiTest):
         data = response.get_json()
         assert response.status_code == 200, "Should return 200 OK on running with file."
         assert UUID_REGEX.match(data["job"]), "Should return a uuid as a job id."
+        assert os.path.isfile(upload_path(Job.get(Job.id == data["job"]))), "Should have created a file."
 
     def todo_test_uploading_zero_content_file_errors(self):
         pass
@@ -102,6 +105,9 @@ class RouteRunTest(ApiTest):
         pass
 
     def todo_test_sending_a_big_request_should_be_prohibited(self):
+        pass
+
+    def todo_test_sending_additional_request_fields_are_not_saved(self):
         pass
 
 
@@ -200,7 +206,6 @@ class HousekeepingTest(unittest.TestCase):
 
     def todo_test_invalid_file_gets_deleted(self):
         pass
-
 
 if __name__ == "__main__":
     unittest.main()

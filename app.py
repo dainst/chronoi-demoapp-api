@@ -88,7 +88,8 @@ def handle_run():
         data = json.loads(request.get_json())
         with open(filename, mode="w", encoding="UTF-8") as file:
             file.write(data["text"])
-        job.request = request.get_json()
+        del data["text"]
+        job.request = json.dumps(data)
 
     job.save(force_insert=True)
     return {"job": job.id}
