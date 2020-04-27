@@ -24,6 +24,43 @@ UUID_REGEX = re.compile('^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f
 JOB_COMPLETION_TIME = 0.5
 
 
+class JobHelper:
+
+    default_request = {
+        "text": "Some\n input\n text\n",
+        "command": {
+            "name": "cat",
+            "options": [],
+        }
+    }
+
+    @classmethod
+    def prepare_job(cls, request=None) -> Job:
+        # prepare a job for the database that should have been
+        # executed after a while
+        if request is None:
+            request = cls.default_request
+        job = Job(status="NEW", request=json.dumps(request))
+
+        # prepare the file that would have been created on job
+        # upload
+        with open(upload_path(job), mode="w") as file:
+            file.write(request["text"])
+        return job
+
+    @classmethod
+    def prepare_job_with_simple_option(cls) -> Job:
+        request = copy.deepcopy(cls.default_request)
+        request["command"]["options"] = ["numbers"]
+        return cls.prepare_job(request=request)
+
+    @classmethod
+    def prepare_job_with_invalid_command(cls) -> Job:
+        request = copy.deepcopy(cls.default_request)
+        request["command"]["name"] = "invalid-command"
+        return cls.prepare_job(request=request)
+
+
 class ApiTest(unittest.TestCase):
 
     def setUp(self) -> None:
@@ -58,10 +95,13 @@ class RouteRunTest(ApiTest):
         assert response.status_code == 200, "Should return 200 OK on running with file."
         assert UUID_REGEX.match(data["job"]), "Should return a uuid as a job id."
 
-    def test_uploading_zero_content_file_errors(self):
+    def todo_test_uploading_zero_content_file_errors(self):
         pass
 
-    def test_uploading_a_big_file_should_be_prohibited(self):
+    def todo_test_uploading_a_big_file_should_be_prohibited(self):
+        pass
+
+    def todo_test_sending_a_big_request_should_be_prohibited(self):
         pass
 
 
@@ -78,30 +118,6 @@ class RouteResultTest(ApiTest):
         # Reset the filter from setUp
         warnings.simplefilter("default", ResourceWarning)
 
-
-    default_request = {
-        "text": "Some\n input\n text\n",
-        "command": {
-            "name": "cat",
-            "options": [],
-        }
-    }
-
-    @classmethod
-    def _prepare_job(cls, request = None) -> Job:
-        # prepare a job for the database that should have been
-        # executed after a while
-        if request is None:
-            request = cls.default_request
-        job = Job(status="NEW", request=json.dumps(request))
-
-        # prepare the file that would have been created on job
-        # upload
-        with open(upload_path(job), mode="w") as file:
-            file.write(request["text"])
-
-        return job
-
     @staticmethod
     def _route(job_id, stderr=False):
         template = "/result/{}.{}"
@@ -110,41 +126,35 @@ class RouteResultTest(ApiTest):
         else:
             return template.format(job_id, "stdout")
 
-
-    def _assert_empty_ok(self, response: Response):
+    @staticmethod
+    def _assert_empty_ok(response: Response):
         assert response.status_code == 200, "Should return 200 OK."
         assert response.get_data(as_text=True) == "", "Should have returned empty."
 
-
     def test_scheduled_job_result(self):
-        job = self._prepare_job()
+        job = JobHelper.prepare_job()
         job.save(force_insert=True)
-
         time.sleep(JOB_COMPLETION_TIME)
 
         # test the stdout path
         response = self.app.get(self._route(job.id))
         assert response.status_code == 200, "Should give 200 OK on response request."
-        assert response.get_data(as_text=True) == self.default_request["text"],\
+        assert response.get_data(as_text=True) == JobHelper.default_request["text"],\
             "Should return input text on successful cat job."
 
         # test the stderr path
         response = self.app.get(self._route(job.id, stderr=True))
         self._assert_empty_ok(response)
 
-
     def test_schedule_job_with_option_works(self):
-        request  = copy.deepcopy(self.default_request)
-        request["command"]["options"] = [ "numbers" ]
-        job = self._prepare_job(request=request)
+        job = JobHelper.prepare_job_with_simple_option()
         job.save(force_insert=True)
-
         time.sleep(JOB_COMPLETION_TIME)
 
         # test the stdout response
         response = self.app.get(self._route(job.id))
         assert response.status_code == 200, "Should return 200 OK on scheduled job with option."
-        assert response.get_data(as_text=True) != self.default_request["text"],\
+        assert response.get_data(as_text=True) != JobHelper.default_request["text"],\
             "Should not return the standard input text on scheduled result with options."
         assert len(response.data) >= 0, "Should return non-empty on scheduled job with options."
 
@@ -153,11 +163,8 @@ class RouteResultTest(ApiTest):
         self._assert_empty_ok(response)
 
     def test_scheduled_job_with_wrong_name_errors(self):
-        request = copy.deepcopy(self.default_request)
-        request["command"]["name"] = "invalid-command"
-        job = self._prepare_job(request=request)
+        job = JobHelper.prepare_job_with_invalid_command()
         job.save(force_insert=True)
-
         time.sleep(JOB_COMPLETION_TIME)
 
         # stdout and stderr should simply be empty if the job never ran
@@ -168,14 +175,30 @@ class RouteResultTest(ApiTest):
         response = self.app.get(self._route(job.id, stderr=True))
         self._assert_empty_ok(response)
 
-    def test_scheduled_job_witout_command_errors(self):
+    def todo_test_scheduled_job_witout_command_errors(self):
         pass
 
-    def test_scheduled_job_with_invalid_option_errors(self):
+    def todo_test_scheduled_job_with_invalid_option_errors(self):
         pass
 
-    def test_filename_param_cannot_escape_download_dir(self):
+    def todo_test_filename_param_cannot_escape_download_dir(self):
         # route = self._route("../../../../../etc/passwd ")
+        pass
+
+
+class HousekeepingTest(unittest.TestCase):
+
+    def setUp(self) -> None:
+        app.testing = True
+        app.debug = True
+
+    def todo_test_old_file_gets_deleted(self):
+        pass
+
+    def todo_test_old_job_gets_deleted(self):
+        pass
+
+    def todo_test_invalid_file_gets_deleted(self):
         pass
 
 
