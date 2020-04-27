@@ -1,6 +1,6 @@
 
 run:
-	FLASK_ENV=development ./app.py
+	FLASK_ENV=development poetry run ./app.py
 
 test:
-	FLASK_ENV=testing ./apitest.py
+	FLASK_ENV=testing poetry run ./apitest.py
