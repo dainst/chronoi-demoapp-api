@@ -32,7 +32,7 @@ def init():
     # Setup all necessary directories (needs config)
     files.init_file_structure(app_config=app.config, proj_dir=project_dir, logger=app.logger)
     # Setup the database (needs file structure, config)
-    init_db(files.db_path())
+    init_db(files.db_path(), log)
     # Setup the commands module (needs config)
     init_commands(app_config=app.config, app_logger=app.logger)
     # Setup the scheduler and directly start it (needs db, commands)

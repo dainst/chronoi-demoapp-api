@@ -6,6 +6,8 @@ from playhouse.sqlite_ext import SqliteExtDatabase
 from uuid import uuid4
 
 
+log = object
+
 db = SqliteExtDatabase(None, pragmas={
     'journal_mode': 'wal',
     'cache_size': -1 * 64000,  # 64MB
@@ -19,7 +21,9 @@ def _create_uuid():
     return str(uuid4())
 
 
-def init_db(db_path: str) -> SqliteExtDatabase:
+def init_db(db_path: str, logger: object) -> SqliteExtDatabase:
+    log = logger
+    log.debug("Initializing database at: {}".format(db_path))
     db.init(db_path)
     db.create_tables([Job], safe=True)
     return db
