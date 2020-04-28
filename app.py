@@ -13,6 +13,11 @@ from src.models import init_db, Job
 from src.commands import init_commands
 from src.schedule import init_app_scheduler
 
+# The user defined command definitions are imported here
+# If you get an error, that this is undefined, you probably
+# want to copy the cmds.example.py to cmds.py in the project
+# directory.
+from cmds import commands
 
 project_dir = os.path.dirname(__file__)
 
@@ -34,9 +39,9 @@ def init():
     # Setup all necessary directories (needs config)
     files.init_file_structure(app_config=app.config, proj_dir=project_dir, logger=app.logger)
     # Setup the database (needs file structure, config)
-    init_db(files.db_path(), log)
+    init_db(db_path=files.db_path(), logger=log)
     # Setup the commands module (needs config)
-    init_commands(app_config=app.config, app_logger=app.logger)
+    init_commands(app_config=app.config, app_logger=app.logger, commands_list=commands)
     # Setup the scheduler and directly start it (needs db, commands)
     scheduler = init_app_scheduler(app_config=app.config, app_logger=app.logger)
     scheduler.start()

@@ -9,12 +9,17 @@ config = {}
 
 log = object()
 
+commands = []
 
-def init_commands(app_config, app_logger):
+
+def init_commands(app_config, app_logger, commands_list):
     global config
     global log
+    global commands
+
     config = app_config
     log = app_logger
+    commands = commands_list
 
 
 class Option:
@@ -114,26 +119,3 @@ def _command_timeout(cmd_name: str) -> float:
     else:
         timeout = config.get("DEFAULT_CMD_TIMEOUT", 1.0)
     return float(timeout)
-
-example_commands = [
-    {
-        "name": "ls",
-        "exec": [
-            "ls",
-            Option("all", to_shell="-a"),
-            Option("long", to_shell="-l")
-        ],
-        "timeout": 1.5,
-    },
-    {
-        "name": "cat",
-        "exec": [
-            "cat",
-            Option("numbers", to_shell="-n"),
-            FilePath()
-        ],
-        "timeout": 5.0,
-    }
-]
-
-commands = example_commands

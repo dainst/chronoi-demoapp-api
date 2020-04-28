@@ -2,6 +2,9 @@
 # This app's development data directory
 data/*
 
+# The concrete command definitions to export
+cmds.py
+
 # Ignore pycharm
 .idea
 
