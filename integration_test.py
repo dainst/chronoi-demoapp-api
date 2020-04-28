@@ -81,7 +81,7 @@ class ApiTest(unittest.TestCase):
 
     def post_json(self, route: str, data: dict, *args, **kw):
         data = json.dumps(data)
-        return self.app.post(route, json=data, *args, **kw)
+        return self.app.post(route, data=data, *args, **kw)
 
     def post_file(self, route: str, file: BytesIO, additional_content=None):
         data = {"file": (file, "test_file.ext")}
@@ -143,7 +143,7 @@ class RouteRunTest(ApiTest):
     def todo_test_sending_a_big_request_should_be_prohibited(self):
         pass
 
-    def todo_test_sending_additional_request_fields_are_not_saved(self):
+    def todo_test_text_and_additional_request_fields_are_not_saved_to_db(self):
         pass
 
 

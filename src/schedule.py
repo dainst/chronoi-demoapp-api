@@ -28,8 +28,9 @@ def task_run_new_job():
     except DoesNotExist:
         log.debug("No jobs to execute.")
     except KeyError as e:
+        log.debug("Failing job with with key error: {}".format(e))
         if job:
-            job.add_message("Key error: {}".format(e))
+            job.fail_with_message("Key error: {}".format(e))
 
 
 def task_cleanup_old_job():

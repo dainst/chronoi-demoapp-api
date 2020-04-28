@@ -64,3 +64,7 @@ class Job(BaseModel):
             self.message += self.message_delim
         self.message += str(message)
         self.save()
+
+    def fail_with_message(self, message: str):
+        self.update_status("FAILED")
+        self.add_message(message)

@@ -111,17 +111,20 @@ def handle_run():
         # command definition for later processing
         file = request.files['file']
         file.save(filename)
-        job.request = request.form.get("data")
+        data = json.loads(request.form.get("data"))
     else:
         # Handle a run command with text input. Save the text
         # to a file and save the command definition for later
         # processing
-        data = json.loads(request.get_json())
+        data = json.loads(request.get_data())
         with open(filename, mode="w", encoding="UTF-8") as file:
             file.write(data["text"])
-        del data["text"]
-        job.request = json.dumps(data)
 
+    # delete any text or additional arguments before saving the request
+    for k in list(data.keys()):
+        if k not in ["command"]:
+            del data[k]
+    job.request = json.dumps(data)
     job.save(force_insert=True)
     return {"job": job.id}
 
