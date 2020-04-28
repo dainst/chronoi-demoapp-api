@@ -62,7 +62,7 @@ This will return a  json response containing a job id like the following:
 The results of the date command executed on the remote can be retrieved with that id:
 
 ```bash
-$ curl localhost:8080/result/676587c3-3ae5-40f8-800a-f583ae0ed922.stdout
+$ curl localhost:8080/result/78b360ce-1517-4c3c-8301-741fd97f9fa9.stdout
 Di 28. Apr 17:10:22 CEST 2020
 ```
 
