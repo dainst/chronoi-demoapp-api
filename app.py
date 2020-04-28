@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from flask import Flask, request, json, send_from_directory
+from flask import Flask, request, json, send_from_directory, make_response
 
+import flask_limiter
+import flask_limiter.util
 import logging
 import os
 
@@ -64,10 +66,34 @@ def _init_configs():
         app.config.from_envvar("FLASK_APP_CONFIG")
 
 
+def _init_rate_limiter() -> flask_limiter.Limiter:
+    # Ask the config if the http header or the actual ip address
+    # should be used, when identifying users for rate limiting.
+    if app.config.get("RATE_LIMITING_USE_X_FORWARDED_FOR"):
+        key_func = flask_limiter.util.get_ipaddr
+    else:
+        key_func = flask_limiter.util.get_remote_address
+    return flask_limiter.Limiter(app, key_func=key_func)
+
+
+def _rate_limit_for_job_request() -> "":
+    return app.config.get("RATE_LIMIT_JOB_REQUESTS")
+
+
+# Return a json response instead of the default html for a
+# rate limited response.
+@app.errorhandler(429)
+def ratelimit_handler(e):
+    return make_response(json.jsonify(limit="%s" % e.description), 429)
+
+
 init()
+
+limiter = _init_rate_limiter()
 
 
 @app.route("/run", methods=["POST"])
+@limiter.limit(_rate_limit_for_job_request)
 def handle_run():
 
     job = Job(status="NEW")

@@ -9,5 +9,6 @@ python = "^3.8"
 Flask = "^1.1"
 peewee = "^3.13"
 APScheduler = "^3.6"
+Flask-Limiter = "^1.2.1"
 
 [tool.poetry.dev-dependencies]

@@ -30,6 +30,10 @@ JOB_COMPLETION_TIME = 0.5
 # to be completed (in seconds)
 HOUSEKEEPING_COMPLETION_TIME = 1.5
 
+# How long to wait to assume that the /run route is no
+# longer rate limited
+RATE_LIMITING_WAIT_TIME = 0.5
+
 
 class JobHelper:
 
@@ -75,9 +79,9 @@ class ApiTest(unittest.TestCase):
         app.debug = True
         self.app = app.test_client()
 
-    def post_json(self, route: str, data: dict):
+    def post_json(self, route: str, data: dict, *args, **kw):
         data = json.dumps(data)
-        return self.app.post(route, json=data)
+        return self.app.post(route, json=data, *args, **kw)
 
     def post_file(self, route: str, file: BytesIO, additional_content=None):
         data = {"file": (file, "test_file.ext")}
@@ -88,21 +92,47 @@ class ApiTest(unittest.TestCase):
 
 class RouteRunTest(ApiTest):
 
+    default_data = {"command": {"name": "ls", "options": ["all", "long"]}}
+
+    def setUp(self) -> None:
+        super().setUp()
+        time.sleep(RATE_LIMITING_WAIT_TIME)
+
     def test_run_text(self):
-        command = {"name": "ls", "options": ["all", "long"]}
-        response = self.post_json("/run", {"text": "Some text here.", "command": command})
+        response = self.post_json("/run", {"text": "Some text here.", **self.default_data})
         data = response.get_json()
         assert response.status_code == 200, "Should return 200 OK on running with text."
         assert UUID_REGEX.match(data["job"]), "Should return a uuid as job id."
         assert os.path.isfile(upload_path(Job.get(Job.id == data["job"]))), "Should have created a file."
 
     def test_run_file(self):
-        data = {"command": {"name": "ls", "options": ["all", "long"]}}
-        response = self.post_file("/run", BytesIO(b'File content'), additional_content=data)
+        response = self.post_file("/run", BytesIO(b'File content'), additional_content=self.default_data)
         data = response.get_json()
         assert response.status_code == 200, "Should return 200 OK on running with file."
         assert UUID_REGEX.match(data["job"]), "Should return a uuid as a job id."
         assert os.path.isfile(upload_path(Job.get(Job.id == data["job"]))), "Should have created a file."
+
+    def test_run_route_is_rate_limited(self):
+        # Use an invalid command for rate-limiting to not bother the scheduler
+        data = {"text": "Rate limiting test", "command": {"name": "invalid-command"}}
+
+        # Exhaust the per-second limit for testing, the last requests should error out
+        last = None
+        for _ in range(0,4):
+            last = self.post_json("/run", data)
+        assert last.status_code == 429, "Should have returned 429 after exhausting the request limit."
+        assert isinstance(last.get_json()["limit"], str) and last.get_json()["limit"] != "",\
+            "Should return a non-empty limit description on a rate-limited request."
+
+        # A request from a different user should however work
+        response = self.post_json("/run", data, headers= { "X-Forwarded-For": "127.0.0.2"})
+        assert response.status_code == 200, "Should return 200 OK for different user."
+
+        # Waiting for a while should allow us to post again.
+        time.sleep(RATE_LIMITING_WAIT_TIME)
+        response = self.post_json("/run", data)
+        assert response.status_code == 200, "Should return 200 OK after a waiting time."
+
 
     def todo_test_uploading_zero_content_file_errors(self):
         pass
@@ -232,6 +262,9 @@ class HousekeepingTest(unittest.TestCase):
         assert does_throw(find_job, DoesNotExist), "Should not find the job after housekeeping anymore."
 
     def todo_test_invalid_file_gets_deleted(self):
+        pass
+
+    def todo_test_job_exhausting_ram_limit_gets_cancelled(self):
         pass
 
 

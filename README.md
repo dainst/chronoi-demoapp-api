@@ -5,11 +5,10 @@ A small flask application that can be used to expose command line programs via a
 
 Features:
 
-* API for file upload
-* Configurable commands with proper option checking.
-* Delayed execution via a scheduler.
-* TODO: Rate-limited endpoints.
-* TODO: Automatic housekeeping for removing stale files and jobs.
+* Rate-limited Endpoint for scheduling jobs with optional file upload.
+* Commands are configurable on project startup time.
+* Delayed execution of jobs/command. (Requester has to poll for success/errors.)
+* TODO: Configurable intervals and limits for housekeeping to prevent resource exhaustion.
 
 
 ## Development
