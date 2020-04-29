@@ -92,7 +92,7 @@ class ApiTest(unittest.TestCase):
 
 class RouteRunTest(ApiTest):
 
-    default_data = {"command": {"name": "ls", "options": ["all", "long"]}}
+    default_data = {"command": {"name": "date", "options": ["-d", "yesterday"]}}
 
     def setUp(self) -> None:
         super().setUp()
