@@ -26,11 +26,19 @@ def task_run_new_job():
                         options=request["command"]["options"],
                         job=job)
     except DoesNotExist:
-        log.debug("No jobs to execute.")
+        # No jobs to execute
+        pass
     except KeyError as e:
-        log.debug("Failing job with with key error: {}".format(e))
+        log.error("Failing job with with key error: {}".format(e))
         if job:
             job.fail_with_message("Key error: {}".format(e))
+    except Exception as e:
+        # Since command execution has it's own error handling,
+        # this should catch all errors during preparation of the command.
+        msg = "Unexpected error in command preparation: {}".format(e)
+        log.error(msg)
+        if job:
+            job.fail_with_message(msg)
 
 
 def task_cleanup_old_job():
@@ -45,7 +53,10 @@ def task_cleanup_old_job():
         log.debug("Deleting old job with creation time: {}".format(job.created))
         job.delete_instance()
     except DoesNotExist:
-        log.debug("No jobs before deletion time: {}".format(max_datetime))
+        # No jobs to delete
+        pass
+    except Exception as e:
+        log.error("Error when removing job: {}".format(e))
 
 
 _jobs_to_config_values = [
