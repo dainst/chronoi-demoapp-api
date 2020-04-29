@@ -102,7 +102,7 @@ $ curl localhost:8080/result/d102ca12-06d0-434e-b392-b9771c96fc38.stdout
 Di 27. Apr 17:22:13 CEST 2020
 ```
 
-Option arguments are shell escaped before execution:
+Options are shell escaped before execution:
 
 ```bash
 $ curl -d '{ "text": "", "command": { "name": "date", "options": ["-d", "now; cat /etc/passwd"]} }' localhost:8080/run
