@@ -104,7 +104,7 @@ def _init_directories():
     if config["ENV"] == "testing":
         test_dir = tempfile.mkdtemp(prefix="demoapp-testing")
         # register the deletion of the tempdir on program exit
-        # atexit.register(_delete_test_directory)
+        atexit.register(_delete_test_directory)
 
     for key in ["DIR_UPLOADS", "DIR_DOWNLOADS"]:
         _init_project_dir(config.get(key))

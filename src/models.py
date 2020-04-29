@@ -22,6 +22,8 @@ def _create_uuid():
 
 
 def init_db(db_path: str, logger: object) -> SqliteExtDatabase:
+    global log
+
     log = logger
     log.debug("Initializing database at: {}".format(db_path))
     db.init(db_path)

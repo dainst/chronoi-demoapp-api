@@ -118,21 +118,20 @@ class RouteRunTest(ApiTest):
 
         # Exhaust the per-second limit for testing, the last requests should error out
         last = None
-        for _ in range(0,4):
+        for _ in range(0, 4):
             last = self.post_json("/run", data)
         assert last.status_code == 429, "Should have returned 429 after exhausting the request limit."
         assert isinstance(last.get_json()["limit"], str) and last.get_json()["limit"] != "",\
             "Should return a non-empty limit description on a rate-limited request."
 
         # A request from a different user should however work
-        response = self.post_json("/run", data, headers= { "X-Forwarded-For": "127.0.0.2"})
+        response = self.post_json("/run", data, headers={"X-Forwarded-For": "127.0.0.2"})
         assert response.status_code == 200, "Should return 200 OK for different user."
 
         # Waiting for a while should allow us to post again.
         time.sleep(RATE_LIMITING_WAIT_TIME)
         response = self.post_json("/run", data)
         assert response.status_code == 200, "Should return 200 OK after a waiting time."
-
 
     def todo_test_uploading_zero_content_file_errors(self):
         pass
