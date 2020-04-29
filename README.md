@@ -16,12 +16,14 @@ Features:
 To run an example application, you can copy the `cmds.example.py` into a file `cmds.py` in the project directory. The `cmds.py` contains some simple command definitions like these:
 
 ```python
+from src.commands import Option, FilePath
+
 example_commands = [
     {
         "name": "date",
         "exec": [
             "date",
-            Option("other", to_shell="-d", nargs=1)
+            Option("-d", to_shell="-d", nargs=1)
         ],
         "timeout": 0.5,
     },
@@ -46,8 +48,7 @@ make run
 The above definition would set up your demo app as a time and echo-server. For example to trigger the date command you can send a POST request like the following:
 
 ```bash
-curl -H "Content-Type: application/json" \
-     -d '{ "text": "", "command": { "name": "date", "options": []} }' \
+curl -d '{ "text": "", "command": { "name": "date", "options": []} }' \
      localhost:8080/run
 ```
 
@@ -69,8 +70,7 @@ Di 28. Apr 17:10:22 CEST 2020
 The app allows you to send additional text that can be used in a file argument. Using the `cat` command defined above with the text parameter the application will use the output of the `cat` program to write our results. This also illustrates the use of the "numbers" option which instructs cat to use `-n` (print line numbers).
 
 ```bash
-curl -H "Content-Type: application/json" \
-     -d '{ "text": "One line\nAnother line", "command": { "name": "cat", "options": [ "numbers" ]} }' \
+curl -d '{ "text": "One line\nAnother line", "command": { "name": "cat", "options": [ "numbers" ]} }' \
      localhost:8080/run
 ```
 
@@ -90,6 +90,29 @@ $ curl localhost:8080/result/36c14fb4-9ec9-437a-80a9-8ffb01d13197.stdout
      2	Another line
 $ curl localhost:8080/result/36c14fb4-9ec9-437a-80a9-8ffb01d13197.stderr
 ```
+
+The "-d" option in the "date" command can be used by including it in the options array together with an argument, e.g.:
+
+```bash
+$ curl -d '{ "text": "", "command": { "name": "date", "options": ["-d", "yesterday"]} }' localhost:8080/run
+{
+  "job": "d102ca12-06d0-434e-b392-b9771c96fc38"
+}
+$ curl localhost:8080/result/d102ca12-06d0-434e-b392-b9771c96fc38.stdout
+Di 27. Apr 17:22:13 CEST 2020
+```
+
+Option arguments are shell escaped before execution:
+
+```bash
+$ curl -d '{ "text": "", "command": { "name": "date", "options": ["-d", "now; cat /etc/passwd"]} }' localhost:8080/run
+{
+  "job": "87ee6c4e-94b7-45ee-a08f-98579d783b7a"
+}
+$ curl localhost:8080/result/87ee6c4e-94b7-45ee-a08f-98579d783b7a.stderr
+date: invalid date ‘'now; cat /etc/passwd'’
+```
+
 
 ## Development
 
