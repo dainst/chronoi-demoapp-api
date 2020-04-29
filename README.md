@@ -39,11 +39,7 @@ example_commands = [
 ]
 ```
 
-Once the `cmds.py` exists, you can start a development server with:
-
-```bash
-make run
-```
+Once the `cmds.py` exists, you can start a development server. See [Setup](#setup) below.
 
 The above definition would set up your demo app as a time and echo-server. For example to trigger the date command you can send a POST request like the following:
 
@@ -114,9 +110,9 @@ date: invalid date ‘'now; cat /etc/passwd'’
 ```
 
 
-## Development
+## Setup
 
-Simple setup
+Either install [poetry locally](https://python-poetry.org/docs/) and do
 
 ```bash
 poetry use 3.8
@@ -124,10 +120,24 @@ poetry install
 make run
 ```
 
+Or alternatively use a docker container:
+
+```bash
+make docker-build
+make docker-run
+```
+
 To run the tests:
 
 ```bash
 make test
+```
+
+Or alternatively using docker:
+
+```bash
+make docker-build     # if not built already
+make docker-test
 ```
 
 #### Configure pycharm with poetry
