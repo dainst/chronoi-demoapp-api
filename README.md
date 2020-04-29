@@ -18,7 +18,7 @@ To run an example application, you can copy the `cmds.example.py` into a file `c
 ```python
 from src.commands import Option, FilePath
 
-example_commands = [
+commands = [
     {
         "name": "date",
         "exec": [
