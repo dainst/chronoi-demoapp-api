@@ -79,8 +79,9 @@ def execute_command(name: str, options: [str], job: Job):
     # This catches errors from our program as well as from the called
     # process, since the latter are wrapped as subprocess.SubprocessError
     except Exception as e:
-        job.update_status("FAILED")
-        job.add_message(str(e))
+        msg = "Job failed with: {}".format(repr(e))
+        log.debug(msg)
+        job.fail_with_message(msg)
     finally:
         stdout.close()
         stderr.close()
@@ -100,6 +101,7 @@ def _prepare_command_args(cmd_name: str, cmd_options: [str], job_file_path="") -
 
     # There should be no user defined options left at this point
     if len(cmd_options) > 0:
+        log.debug("Unhandled options:", cmd_options)
         raise ValueError("Some options were not handled.")
 
     return args

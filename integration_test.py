@@ -114,7 +114,7 @@ class RouteRunTest(ApiTest):
 
     def test_run_route_is_rate_limited(self):
         # Use an invalid command for rate-limiting to not bother the scheduler
-        data = {"text": "Rate limiting test", "command": {"name": "invalid-command"}}
+        data = {"text": "Rate limiting test", "command": {"name": "invalid-command", "options": []}}
 
         # Exhaust the per-second limit for testing, the last requests should error out
         last = None
