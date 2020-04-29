@@ -41,7 +41,11 @@ example_commands = [
 
 Once the `cmds.py` exists, you can start a development server. See [Setup](#setup) below.
 
-The above definition would set up your demo app as a time and echo-server. For example to trigger the date command you can send a POST request like the following:
+The above definition would set up your demo app as a time and echo-server.
+
+### Example: date
+
+For example to trigger the date command you can send a POST request like the following:
 
 ```bash
 curl -d '{ "text": "", "command": { "name": "date", "options": []} }' \
@@ -62,6 +66,9 @@ The results of the date command executed on the remote can be retrieved with tha
 $ curl localhost:8080/result/78b360ce-1517-4c3c-8301-741fd97f9fa9.stdout
 Di 28. Apr 17:10:22 CEST 2020
 ```
+
+### Example: cat
+
 
 The app allows you to send additional text that can be used in a file argument. Using the `cat` command defined above with the text parameter the application will use the output of the `cat` program to write our results. This also illustrates the use of the "numbers" option which instructs cat to use `-n` (print line numbers).
 
@@ -86,6 +93,8 @@ $ curl localhost:8080/result/36c14fb4-9ec9-437a-80a9-8ffb01d13197.stdout
      2	Another line
 $ curl localhost:8080/result/36c14fb4-9ec9-437a-80a9-8ffb01d13197.stderr
 ```
+
+### Example: date with options
 
 The "-d" option in the "date" command can be used by including it in the options array together with an argument, e.g.:
 
