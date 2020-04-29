@@ -63,7 +63,7 @@ This will return a  json response containing a job id like the following:
 The results of the date command executed on the remote can be retrieved with that id:
 
 ```bash
-$ curl localhost:8080/result/78b360ce-1517-4c3c-8301-741fd97f9fa9.stdout
+> curl localhost:8080/result/78b360ce-1517-4c3c-8301-741fd97f9fa9.stdout
 Di 28. Apr 17:10:22 CEST 2020
 ```
 
@@ -88,10 +88,10 @@ will give an id again.
 The results are then at `result/<id>.stdout`, stderr is empty:
 
 ```
-$ curl localhost:8080/result/36c14fb4-9ec9-437a-80a9-8ffb01d13197.stdout
+> curl localhost:8080/result/36c14fb4-9ec9-437a-80a9-8ffb01d13197.stdout
      1	One line
      2	Another line
-$ curl localhost:8080/result/36c14fb4-9ec9-437a-80a9-8ffb01d13197.stderr
+> curl localhost:8080/result/36c14fb4-9ec9-437a-80a9-8ffb01d13197.stderr
 ```
 
 ### Example: date with options
@@ -99,22 +99,22 @@ $ curl localhost:8080/result/36c14fb4-9ec9-437a-80a9-8ffb01d13197.stderr
 The "-d" option in the "date" command can be used by including it in the options array together with an argument, e.g.:
 
 ```bash
-$ curl -d '{ "text": "", "command": { "name": "date", "options": ["-d", "yesterday"]} }' localhost:8080/run
+> curl -d '{ "text": "", "command": { "name": "date", "options": ["-d", "yesterday"]} }' localhost:8080/run
 {
   "job": "d102ca12-06d0-434e-b392-b9771c96fc38"
 }
-$ curl localhost:8080/result/d102ca12-06d0-434e-b392-b9771c96fc38.stdout
+> curl localhost:8080/result/d102ca12-06d0-434e-b392-b9771c96fc38.stdout
 Di 27. Apr 17:22:13 CEST 2020
 ```
 
 Options are shell escaped before execution:
 
 ```bash
-$ curl -d '{ "text": "", "command": { "name": "date", "options": ["-d", "now; cat /etc/passwd"]} }' localhost:8080/run
+> curl -d '{ "text": "", "command": { "name": "date", "options": ["-d", "now; cat /etc/passwd"]} }' localhost:8080/run
 {
   "job": "87ee6c4e-94b7-45ee-a08f-98579d783b7a"
 }
-$ curl localhost:8080/result/87ee6c4e-94b7-45ee-a08f-98579d783b7a.stderr
+> curl localhost:8080/result/87ee6c4e-94b7-45ee-a08f-98579d783b7a.stderr
 date: invalid date ‘'now; cat /etc/passwd'’
 ```
 
