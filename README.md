@@ -121,6 +121,8 @@ date: invalid date ‘'now; cat /etc/passwd'’
 
 ## Setup
 
+After copying the `cmds.example.py` to `cmds.py` or creating your own version of that file (see the examples above) you have two options to run the application:
+
 Either install [poetry locally](https://python-poetry.org/docs/) and do
 
 ```bash
