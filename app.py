@@ -3,6 +3,7 @@
 
 from flask import Flask, request, json, send_from_directory, make_response
 
+import argparse
 import flask_limiter
 import flask_limiter.util
 import logging
@@ -139,4 +140,9 @@ def get_status():
 
 
 if __name__ == "__main__":
-    app.run(port=8080, host="0.0.0.0")
+
+    parser = argparse.ArgumentParser(description="Start the demoapp server.")
+    parser.add_argument("--port", type=int, default=8080, help="The local port to expose the api at.")
+    args = parser.parse_args()
+
+    app.run(port=args.port, host="0.0.0.0")

@@ -1,7 +1,8 @@
 
+PORT=8080
 
 run:
-	FLASK_ENV=development poetry run ./app.py
+	FLASK_ENV=development poetry run ./app.py --port $(PORT)
 
 test:
 	FLASK_ENV=testing poetry run ./integration_test.py
@@ -15,7 +16,7 @@ docker-run:
 			-it \
 			-v $(CURDIR):/app \
 			-e FLASK_ENV=development \
-			-p 8080:8080 \
+			-p $(PORT):8080 \
 			dainst/demoapp:dev
 
 docker-test:
