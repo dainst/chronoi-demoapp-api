@@ -12,6 +12,8 @@ USER demoapp
 WORKDIR /app
 COPY poetry.lock pyproject.toml /app/
 
+# Tell poetry to use the system python and to omit dev dependencies
+# if in production.
 RUN poetry config virtualenvs.create false \
     && poetry install $(test "$FLASK_ENV" = "production" && echo "--no-dev") --no-interaction
 
