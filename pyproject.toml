@@ -9,7 +9,7 @@ description = ""
 authors = ["David Neugebauer <david.neugebauer@posteo.de>"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.6"
 Flask = "^1.1"
 peewee = "^3.13"
 APScheduler = "^3.6"
