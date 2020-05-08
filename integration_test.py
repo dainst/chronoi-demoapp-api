@@ -46,7 +46,7 @@ class JobHelper:
     }
 
     @classmethod
-    def prepare_job(cls, request=None) -> Job:
+    def prepare_job(cls, request=None, save=False) -> Job:
         # prepare a job for the database that should have been
         # executed after a while
         if request is None:
@@ -57,19 +57,23 @@ class JobHelper:
         # upload
         with open(upload_path(job), mode="w") as file:
             file.write(request["text"])
+
+        # save in the database if asked for
+        if save:
+            job.save(force_insert=True)
         return job
 
     @classmethod
-    def prepare_job_with_simple_option(cls) -> Job:
+    def prepare_job_with_simple_option(cls, save=False) -> Job:
         request = copy.deepcopy(cls.default_request)
         request["command"]["options"] = ["numbers"]
-        return cls.prepare_job(request=request)
+        return cls.prepare_job(request=request, save=save)
 
     @classmethod
-    def prepare_job_with_invalid_command(cls) -> Job:
+    def prepare_job_with_invalid_command(cls, save=False) -> Job:
         request = copy.deepcopy(cls.default_request)
         request["command"]["name"] = "invalid-command"
-        return cls.prepare_job(request=request)
+        return cls.prepare_job(request=request, save=save)
 
 
 class ApiTest(unittest.TestCase):
@@ -146,6 +150,35 @@ class RouteRunTest(ApiTest):
         pass
 
 
+class RouteStatusTest(ApiTest):
+
+    @staticmethod
+    def _route(job):
+        return "/status/{}".format(job.id)
+
+    def test_status_returned_immeadiately_after_setup(self):
+        message = "A helpful message."
+        for status in ["NEW", "IN_PROGRESS", "SUCCESS", "FAILED"]:
+            job = JobHelper.prepare_job(save=True)
+            job.update_status(status)
+            job.add_message(message)
+
+            response = self.app.get(self._route(job))
+            data = response.get_json()
+
+            assert response.status_code == 200, "Should return 200 OK for status: {}".format(status)
+            assert data["id"] == job.id, "Should return the correct id for status request."
+            assert data["status"] == status, "Should return the Status: {}".format(status)
+            assert data["message"] == message, "Should have a message set for job with status: {}".format(status)
+
+    def test_status_returns_404_on_missing_job(self):
+        job = JobHelper.prepare_job(save=False)
+        response = self.app.get(self._route(job))
+        msg = response.get_json()["message"]
+        assert response.status_code == 404, "Should return 404 for missing job status request."
+        assert isinstance(msg, str) and len(msg) > 0, "Should return a non-empty message on 404 status requests.<"
+
+
 class RouteResultTest(ApiTest):
 
     def setUp(self):
@@ -173,8 +206,7 @@ class RouteResultTest(ApiTest):
         assert response.get_data(as_text=True) == "", "Should have returned empty."
 
     def test_scheduled_job_result(self):
-        job = JobHelper.prepare_job()
-        job.save(force_insert=True)
+        job = JobHelper.prepare_job(save=True)
         time.sleep(JOB_COMPLETION_TIME)
 
         # test the stdout path
@@ -188,8 +220,7 @@ class RouteResultTest(ApiTest):
         self._assert_empty_ok(response)
 
     def test_schedule_job_with_option_works(self):
-        job = JobHelper.prepare_job_with_simple_option()
-        job.save(force_insert=True)
+        job = JobHelper.prepare_job_with_simple_option(save=True)
         time.sleep(JOB_COMPLETION_TIME)
 
         # test the stdout response
@@ -204,8 +235,7 @@ class RouteResultTest(ApiTest):
         self._assert_empty_ok(response)
 
     def test_scheduled_job_with_wrong_name_errors(self):
-        job = JobHelper.prepare_job_with_invalid_command()
-        job.save(force_insert=True)
+        job = JobHelper.prepare_job_with_invalid_command(save=True)
         time.sleep(JOB_COMPLETION_TIME)
 
         # stdout and stderr should simply be empty if the job never ran

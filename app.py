@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from flask import Flask, request, json, send_from_directory, make_response
+from peewee import DoesNotExist
 
 import argparse
 import flask_limiter
@@ -135,8 +136,17 @@ def handle_result(filename):
     return send_from_directory(files.downloads_dir(), filename)
 
 
-def get_status():
-    pass
+@app.route("/status/<jobId>")
+def handle_status(jobId):
+    try:
+        job = Job.get_by_id(jobId)
+        return {
+            "id": job.id,
+            "status": job.status,
+            "message": job.message
+        }
+    except DoesNotExist:
+        return {"message": "A job with this id does not exist."}, 404
 
 
 if __name__ == "__main__":
